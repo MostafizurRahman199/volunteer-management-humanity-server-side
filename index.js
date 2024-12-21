@@ -173,6 +173,22 @@ async function run() {
     });
 
 
+    app.get("/all-post-volunteer", async (req, res) => {
+      try {
+        
+        const result = await postVolunteerCollection.find({}).toArray();
+        res.status(200).json(result);
+
+         
+      } catch (err) {
+        console.error("Error inserting result:", err);
+        res
+          .status(500)
+          .json({ message: "Failed to find result", error: err.message });
+      }
+    });
+
+
 
 
 
