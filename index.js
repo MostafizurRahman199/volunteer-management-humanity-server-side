@@ -245,6 +245,12 @@ async function run() {
 app.get("/volunteer-posts/:email",verifyToken, async (req, res) => {
   const { email } = req.params;
 
+  if (req?.user?.email !== email) {
+    return res
+      .status(403)
+      .json({ success: false, message: "forbidden access" });
+  }
+
   try {
     const result = await postVolunteerCollection.find({ organizerEmail: email }).toArray();
    
@@ -336,9 +342,20 @@ app.delete("/delete-volunteer-post/:id", async (req, res) => {
 
 // my volunteer request page
 
-app.get("/volunteer-requests/:email", async (req, res) => {
-  const { email } = req.params;
-  try {
+app.get("/volunteer-requests/:email", verifyToken, async (req, res) => {
+  const { email } = req?.params;
+
+  
+
+  // ___________step 6___for jwt and cookies storage
+
+  if (req?.user?.email !== email) {
+    return res
+      .status(403)
+      .json({ success: false, message: "forbidden access" });
+  }
+
+try {
     const requests = await appliedForVolunteerCollection.find({ volunteerEmail: email }).toArray();
     res.status(200).json(requests);
   } catch (err) {
