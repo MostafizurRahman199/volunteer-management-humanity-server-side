@@ -87,6 +87,8 @@ async function run() {
     const db = client.db("humanity");
     const postVolunteerCollection = db.collection("postVolunteer");
     const appliedForVolunteerCollection = db.collection("appliedForVolunteer");
+    const workExperienceCollection = db.collection("workExperience");
+
     console.log("Successfully connected to MongoDB!");
 
     // auth related APIS
@@ -120,7 +122,7 @@ async function run() {
     });
 
     // ________________________________my posted job api
-    app.post("/post-for-volunteer", async (req, res) => {
+    app.post("/post-for-volunteer", verifyToken, async (req, res) => {
       try {
         const data = req.body;
     
@@ -160,7 +162,9 @@ async function run() {
       }
     });
 
-    app.get("/volunteer-post/:id", async (req, res) => {
+
+
+    app.get("/volunteer-post/:id", verifyToken, async (req, res) => {
       const { id } = req.params; // Extract the ID from the route parameters
 
       try {
@@ -238,7 +242,7 @@ async function run() {
 
 // ________________my volunteer post 
 
-app.get("/volunteer-posts/:email", async (req, res) => {
+app.get("/volunteer-posts/:email",verifyToken, async (req, res) => {
   const { email } = req.params;
 
   try {
@@ -259,7 +263,7 @@ app.get("/volunteer-post/:id", async (req, res) => {
     const result = await postVolunteerCollection.findOne({ _id: new ObjectId(id) });
   
     res.status(200).json(result);
-    
+
   } catch (err) {
     console.error("Error fetching volunteer post:", err);
     res.status(500).json({ message: "Failed to fetch post", error: err.message });
@@ -268,41 +272,7 @@ app.get("/volunteer-post/:id", async (req, res) => {
 
 
 
-// app.put("/update-volunteer-post/:id", async (req, res) => {
-//   const { id } = req.params; // Extract the ID from the route parameters
-//   const updateData = req.body; // Extract the update data from the request body
 
-//   console.log("Received request to update post ID:", id);
-//   console.log("Received update data:", updateData);
-
-//   try {
-//     // Remove the _id field from the update data
-//     const { _id, ...updateFields } = updateData;
-
-//     // Update the post using findOneAndUpdate
-//     const result = await postVolunteerCollection.findOneAndUpdate(
-//       { _id: new ObjectId(id) }, // Match the document by its ID
-//       { $set: updateFields }, // Update with the remaining fields
-//       { returnDocument: "after" } // Return the updated document
-//     );
-
-//     if (!result.value) {
-//       return res.status(404).json({ message: "Post not found" });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Post updated successfully",
-//       updatedPost: result.value,
-//     });
-//   } catch (err) {
-//     console.error("Error updating post:", err);
-//     res.status(500).json({
-//       message: "Failed to update post",
-//       error: err.message,
-//     });
-//   }
-// });
 
 
 
@@ -315,8 +285,7 @@ app.put("/update-volunteer-post/:id", async (req, res) => {
 
   try {
  
-
-    const { _id, ...updateFields } = updateData;
+     const { _id, ...updateFields } = updateData;
 
     const result = await postVolunteerCollection.findOneAndUpdate(
       { _id: new ObjectId(id) },
@@ -357,6 +326,126 @@ app.delete("/delete-volunteer-post/:id", async (req, res) => {
   } catch (err) {
     console.error("Error deleting post:", err);
     res.status(500).json({ message: "Failed to delete post", error: err.message });
+  }
+});
+
+
+// ___________my volunteer post end
+
+
+
+// my volunteer request page
+
+app.get("/volunteer-requests/:email", async (req, res) => {
+  const { email } = req.params;
+  try {
+    const requests = await appliedForVolunteerCollection.find({ volunteerEmail: email }).toArray();
+    res.status(200).json(requests);
+  } catch (err) {
+    console.error("Error fetching requests:", err);
+    res.status(500).json({ message: "Failed to fetch requests" });
+  }
+});
+
+
+
+// my volunteer request page
+
+app.post("/cancel-volunteer-request", async (req, res) => {
+    const data = req.body;
+    const postId = data?.postId;
+    const id = data?._id;
+
+    // console.log(postId);
+    // console.log(id);
+
+  try {
+
+    const result2 = await postVolunteerCollection.findOneAndUpdate(
+      { _id: new ObjectId(postId) },
+      { $inc: { volunteersNeeded: 1 } },
+      { returnDocument: "after" }
+    );
+
+    // console.log("Update result2:", result2); 
+    const result = await appliedForVolunteerCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+    res.status(200).json(result);
+
+  } catch (err) {
+    console.error("Error canceling request:", err);
+    res.status(500).json({ message: "Failed to cancel request" });
+  }
+});
+
+
+
+// home -> volunteer need now
+app.get("/volunteer-posts-sorted", async (req, res) => {
+  try {
+    const posts = await postVolunteerCollection
+      .find({})
+      .sort({ deadline: 1 }) // Sort by deadline in ascending order
+      .limit(6) // Limit to 6 posts
+      .toArray();
+
+    res.status(200).json(posts);
+  } catch (err) {
+    console.error("Error fetching sorted posts:", err.message);
+    res.status(500).json({ message: "Failed to fetch posts", error: err.message });
+  }
+});
+
+
+
+
+// share work experience
+app.post('/work-experience', async (req, res) => {
+  const workExperienceData = req.body;
+  console.log(workExperienceData)
+
+  try {
+      const result = await workExperienceCollection.insertOne(workExperienceData);
+
+      if (result.acknowledged) {
+          res.status(201).json(result);
+      } else {
+          res.status(500).json({
+              success: false,
+              message: "Failed to add work experience.",
+          });
+      }
+  } catch (error) {
+      console.error("Error adding work experience:", error);
+      res.status(500).json({
+          success: false,
+          message: "Internal server error.",
+          error: error.message,
+      });
+  }
+});
+
+
+// get work experience
+app.get('/work-experience', async (req, res) => {
+  try {
+      // Fetch all work experiences sorted by creation date
+      const workExperiences = await workExperienceCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .toArray();
+
+      res.status(200).json(workExperiences);
+  } catch (error) {
+      console.error("Error fetching work experiences:", error);
+      res.status(500).json({
+          success: false,
+          message: "Internal server error.",
+          error: error.message,
+      });
   }
 });
 
