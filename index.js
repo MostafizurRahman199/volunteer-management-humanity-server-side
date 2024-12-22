@@ -19,7 +19,7 @@ app.use(
     origin: [
       "http://localhost:4173",
       "http://localhost:5173",
-      "https://job-seeker-d51b4.web.app",
+  
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
 
@@ -78,9 +78,10 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.connect();
+    // await client.db("admin").command({ ping: 1 });
+
     // Access the database and collections
 
     const db = client.db("humanity");
@@ -235,7 +236,129 @@ async function run() {
     
 
 
+// ________________my volunteer post 
 
+app.get("/volunteer-posts/:email", async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const result = await postVolunteerCollection.find({ organizerEmail: email }).toArray();
+   
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error fetching posts:", err);
+    res.status(500).json({ message: "Failed to fetch posts", error: err.message });
+  }
+});
+
+
+app.get("/volunteer-post/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await postVolunteerCollection.findOne({ _id: new ObjectId(id) });
+  
+    res.status(200).json(result);
+    
+  } catch (err) {
+    console.error("Error fetching volunteer post:", err);
+    res.status(500).json({ message: "Failed to fetch post", error: err.message });
+  }
+});
+
+
+
+// app.put("/update-volunteer-post/:id", async (req, res) => {
+//   const { id } = req.params; // Extract the ID from the route parameters
+//   const updateData = req.body; // Extract the update data from the request body
+
+//   console.log("Received request to update post ID:", id);
+//   console.log("Received update data:", updateData);
+
+//   try {
+//     // Remove the _id field from the update data
+//     const { _id, ...updateFields } = updateData;
+
+//     // Update the post using findOneAndUpdate
+//     const result = await postVolunteerCollection.findOneAndUpdate(
+//       { _id: new ObjectId(id) }, // Match the document by its ID
+//       { $set: updateFields }, // Update with the remaining fields
+//       { returnDocument: "after" } // Return the updated document
+//     );
+
+//     if (!result.value) {
+//       return res.status(404).json({ message: "Post not found" });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Post updated successfully",
+//       updatedPost: result.value,
+//     });
+//   } catch (err) {
+//     console.error("Error updating post:", err);
+//     res.status(500).json({
+//       message: "Failed to update post",
+//       error: err.message,
+//     });
+//   }
+// });
+
+
+
+app.put("/update-volunteer-post/:id", async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  console.log("Received request to update post ID:", id);
+  console.log("Received update data:", updateData);
+
+  try {
+ 
+
+    const { _id, ...updateFields } = updateData;
+
+    const result = await postVolunteerCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateFields },
+      { returnDocument: "after" }
+    );
+
+    if (!result.value) {
+      return res.status(404).json({ success: false, message: "Post not found" });
+    }
+
+    res.status(200).json(result);
+    
+  } catch (err) {
+    console.error("Error updating post:", err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update post",
+      error: err.message,
+    });
+  }
+});
+
+
+
+
+
+app.delete("/delete-volunteer-post/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await postVolunteerCollection.deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json({ message: "Post deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting post:", err);
+    res.status(500).json({ message: "Failed to delete post", error: err.message });
+  }
+});
 
 
 
