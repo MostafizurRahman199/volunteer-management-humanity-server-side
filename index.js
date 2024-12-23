@@ -466,6 +466,56 @@ app.get('/work-experience', async (req, res) => {
   }
 });
 
+// _________received request page
+
+//private route
+app.get("/organizer-posts/:email", async (req, res) => {
+  const { email } = req.params; // Extract organizer's email
+  try {
+    const posts = await postVolunteerCollection.find({ organizerEmail: email }).toArray();
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch posts", error: err.message });
+  }
+});
+
+
+//private route
+app.post("/applied-requests", async (req, res) => {
+  const { postIds } = req.body; // An array of post IDs
+  try {
+    const requests = await appliedForVolunteerCollection.find({ postId: { $in: postIds } }).toArray();
+    res.status(200).json(requests);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch applied requests", error: err.message });
+  }
+});
+
+
+// private route
+app.post("/update-request-status", async (req, res) => {
+ 
+
+  const data = req.body;
+  // console.log(data);
+  const id = data?.id;
+  const status = data?.status;
+
+  try {
+    const result = await appliedForVolunteerCollection.updateOne(
+      { _id: new ObjectId(id) }, // Match the request by its ID
+      { $set: { status } } // Update the status field
+    );
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update request status", error: err.message });
+  }
+});
+
+
 
 
     // app.patch("/decrease-volunteer-need/:id", async (req, res) => {
