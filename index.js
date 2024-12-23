@@ -212,12 +212,12 @@ async function run() {
         console.log("Insert result:", result);
     
         // Update the volunteersNeeded count
-        const result2 = await postVolunteerCollection.findOneAndUpdate(
-          { _id: new ObjectId(id) },
-          { $inc: { volunteersNeeded: -1 } },
-          { returnDocument: "after" }
-        );
-        console.log("Update result:", result2); // Log the result of the update
+        // const result2 = await postVolunteerCollection.findOneAndUpdate(
+        //   { _id: new ObjectId(id) },
+        //   { $inc: { volunteersNeeded: -1 } },
+        //   { returnDocument: "after" }
+        // );
+        // console.log("Update result:", result2); // Log the result of the update
     
         // if (!result2.value) {
         //   return res.status(404).json({ message: "Post not found" });
@@ -372,17 +372,20 @@ app.post("/cancel-volunteer-request", async (req, res) => {
     const data = req.body;
     const postId = data?.postId;
     const id = data?._id;
+    const status = data?.status;
 
     // console.log(postId);
     // console.log(id);
 
   try {
 
-    const result2 = await postVolunteerCollection.findOneAndUpdate(
+   if(status === "accepted") {
+     const result2 = await postVolunteerCollection.findOneAndUpdate(
       { _id: new ObjectId(postId) },
       { $inc: { volunteersNeeded: 1 } },
       { returnDocument: "after" }
     );
+   }
 
     // console.log("Update result2:", result2); 
     const result = await appliedForVolunteerCollection.deleteOne({ _id: new ObjectId(id) });
@@ -469,7 +472,7 @@ app.get('/work-experience', async (req, res) => {
 // _________received request page
 
 //private route
-app.get("/organizer-posts/:email", async (req, res) => {
+app.get("/organizer-posts/:email", verifyToken, async (req, res) => {
   const { email } = req.params; // Extract organizer's email
   try {
     const posts = await postVolunteerCollection.find({ organizerEmail: email }).toArray();
@@ -481,7 +484,7 @@ app.get("/organizer-posts/:email", async (req, res) => {
 
 
 //private route
-app.post("/applied-requests", async (req, res) => {
+app.post("/applied-requests", verifyToken, async (req, res) => {
   const { postIds } = req.body; // An array of post IDs
   try {
     const requests = await appliedForVolunteerCollection.find({ postId: { $in: postIds } }).toArray();
@@ -493,19 +496,36 @@ app.post("/applied-requests", async (req, res) => {
 
 
 // private route
-app.post("/update-request-status", async (req, res) => {
+app.post("/update-request-status", verifyToken, async (req, res) => {
  
 
   const data = req.body;
   // console.log(data);
   const id = data?.id;
   const status = data?.status;
+  const postId = data?.postId;
 
   try {
+
+    if(status === "accepted") {
+      console.log(status);
+      const result2 = await postVolunteerCollection.findOneAndUpdate(
+        { _id: new ObjectId(postId) },
+        { $inc: { volunteersNeeded: -1 } },
+        { returnDocument: "after" }
+      );
+      // console.log("Update result:", result2);
+    }
+
+
     const result = await appliedForVolunteerCollection.updateOne(
       { _id: new ObjectId(id) }, // Match the request by its ID
       { $set: { status } } // Update the status field
     );
+
+
+
+
     if (result.modifiedCount === 0) {
       return res.status(404).json({ message: "Request not found" });
     }
