@@ -151,6 +151,7 @@ async function run() {
     });
     
 
+    // public
     app.get("/all-post-volunteer", async (req, res) => {
       try {
         const result = await postVolunteerCollection.find({}).toArray();
@@ -163,26 +164,14 @@ async function run() {
       }
     });
 
-    app.get("/all-post-volunteer", async (req, res) => {
-      try {
-        const result = await postVolunteerCollection.deleteMany({}).toArray();
-        res.status(200).json(result);
-      } catch (err) {
-        console.error("Error inserting result:", err);
-        res
-          .status(500)
-          .json({ message: "Failed to find result", error: err.message });
-      }
-    });
 
 
 
-    
 
-
+//private
 
     app.get("/volunteer-post/:id", verifyToken, async (req, res) => {
-      const { id } = req.params; // Extract the ID from the route parameters
+      const { id } = req.params; 
 
       try {
         const result = await postVolunteerCollection.findOne({
@@ -213,9 +202,9 @@ async function run() {
 // })
 
 
+//private
 
-
-    app.post("/apply-for-volunteer", async (req, res) => {
+    app.post("/apply-for-volunteer",verifyToken, async (req, res) => {
       try {
 
         const data = req.body;
@@ -258,7 +247,7 @@ async function run() {
 
 
 // ________________my volunteer post 
-
+//private
 app.get("/volunteer-posts/:email",verifyToken, async (req, res) => {
   const { email } = req.params;
 
@@ -555,77 +544,9 @@ app.post("/update-request-status", verifyToken, async (req, res) => {
 });
 
 
+ 
 
-// private route
-    // app.patch("/decrease-volunteer-need/:id", async (req, res) => {
-    //   const { id } = req.params;
 
-    //   console.log("Received request to decrease volunteers for post ID:", id);
-
-    //   try {
-
-    //     const result = await postVolunteerCollection.findOneAndUpdate(
-    //       { _id: new ObjectId(id) },
-    //       { $inc: { volunteersNeeded: -1 } },
-    //       { returnDocument: "after" }
-    //     );
-
-    //     if (!result.value) {
-    //       return res.status(404).json({ message: "Post not found" });
-    //     }
-
-    //     console.log("Updated document:", result.value);
-
-    //     res.status(200).json({
-    //       message: "Volunteers needed count decreased successfully",
-    //       updatedPost: result.value,
-    //     });
-    //   } catch (err) {
-    //     console.error("Error in backend route:", err.message);
-    //     res.status(500).json({ message: "Failed to decrease volunteers needed", error: err.message });
-    //   }
-    // });
-
-    app.get("/applied-job/:email", verifyToken, async (req, res) => {
-      const email = req?.params?.email;
-      // console.log(email);
-
-      const query = { applicantEmail: email };
-      // console.log("Cookies : ", req.cookies);
-
-      // ___________step 6___for jwt and cookies storage
-
-      if (req?.user?.email !== email) {
-        return res
-          .status(403)
-          .json({ success: false, message: "forbidden access" });
-      }
-
-      try {
-        const result = await jobApplicationCollection
-          .find({ applicantEmail: email })
-          .toArray();
-
-        for (const item of result) {
-          const job = await jobCollection.findOne({
-            _id: new ObjectId(item.jobId),
-          });
-          if (job) {
-            item.jobTitle = job.title;
-            item.companyName = job.company;
-            item.location = job.location;
-            item.company_logo = job.company_logo;
-          }
-        }
-
-        if (!result) {
-          return res.status(404).json({ message: "result not found" });
-        }
-        res.status(200).json(result);
-      } catch (error) {
-        res.status(500).json({ message: "Error fetching result details" });
-      }
-    });
   } catch (error) {
     console.error("Error connecting to MongoDB", error);
   } finally {
