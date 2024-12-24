@@ -89,6 +89,7 @@ async function run() {
     const postVolunteerCollection = db.collection("postVolunteer");
     const appliedForVolunteerCollection = db.collection("appliedForVolunteer");
     const workExperienceCollection = db.collection("workExperience");
+    const savedPostCollection = db.collection("savedPost");
 
     console.log("Successfully connected to MongoDB!");
 
@@ -542,6 +543,120 @@ app.post("/update-request-status", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Failed to update request status", error: err.message });
   }
 });
+
+
+
+
+
+// post detail page
+//private route
+//operation start
+
+app.post("/save-post", verifyToken, async (req, res) => {
+  try {
+    const saveData = req.body;
+
+    // Validate required fields
+    if (!saveData.postId || !saveData.email) {
+      return res.status(400).json({ message: "Post ID and email are required." });
+    }
+
+    // Check if the post is already saved by the user
+    const existingPost = await savedPostCollection.findOne({
+      postId: saveData.postId,
+      email: saveData.email,
+    });
+
+    if (existingPost) {
+      return res.status(409).json({ message: "Post already saved." });
+    }
+
+    // Insert the save data into the collection
+    const result = await savedPostCollection.insertOne(saveData);
+
+    if (result.acknowledged) {
+      res.status(200).json({
+        success: true,
+        message: "Post saved successfully.",
+        insertedId: result.insertedId,
+      });
+    } else {
+      res.status(400).json({ message: "Failed to save post." });
+    }
+  } catch (err) {
+    console.error("Error saving post:", err);
+    res.status(500).json({ message: "Failed to save post.", error: err.message });
+  }
+});
+
+
+app.get("/check-saved/:postId/:email", verifyToken, async (req, res) => {
+  try {
+    const { postId, email } = req.params;
+
+    // Validate parameters
+    if (!postId || !email) {
+      return res.status(400).json({ message: "Post ID and email are required." });
+    }
+
+    // Find the saved post in the collection
+    const savedPost = await savedPostCollection.findOne({ postId, email });
+
+    if (savedPost) {
+      res.status(200).json({ success: true, saved: true, data: savedPost });
+    } else {
+      res.status(200).json({ success: true, saved: false });
+    }
+  } catch (err) {
+    console.error("Error checking saved status:", err);
+    res.status(500).json({ message: "Failed to check saved status.", error: err.message });
+  }
+});
+
+
+
+//saved page route
+
+app.get("/saved-posts/:email", verifyToken, async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const savedPosts = await savedPostCollection.find({ email }).toArray();
+    res.status(200).json(savedPosts);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch saved posts", error: error.message });
+  }
+});
+
+
+app.delete("/saved-posts/:postId/:email", verifyToken, async (req, res) => {
+  try {
+    const { postId, email } = req.params;
+    console.log(postId, email)
+
+    if (!postId || !email) {
+      return res.status(400).json({ message: "Post ID and email are required" });
+    }
+
+    const query = {_id : new ObjectId(postId), email}
+    const result = await savedPostCollection.deleteOne(query);
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Saved post not found" });
+    }
+
+    res.status(200).json({ success: true, message: "Saved post deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete saved post", error: error.message });
+  }
+});
+
+
+
 
 
  
