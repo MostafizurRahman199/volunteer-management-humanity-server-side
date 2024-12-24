@@ -19,6 +19,7 @@ app.use(
     origin: [
       "http://localhost:4173",
       "http://localhost:5173",
+      "https://humanity-by-mostafiz.netlify.app",
   
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -162,6 +163,22 @@ async function run() {
       }
     });
 
+    app.get("/all-post-volunteer", async (req, res) => {
+      try {
+        const result = await postVolunteerCollection.deleteMany({}).toArray();
+        res.status(200).json(result);
+      } catch (err) {
+        console.error("Error inserting result:", err);
+        res
+          .status(500)
+          .json({ message: "Failed to find result", error: err.message });
+      }
+    });
+
+
+
+    
+
 
 
     app.get("/volunteer-post/:id", verifyToken, async (req, res) => {
@@ -262,6 +279,7 @@ app.get("/volunteer-posts/:email",verifyToken, async (req, res) => {
 });
 
 
+
 app.get("/volunteer-post/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -281,8 +299,8 @@ app.get("/volunteer-post/:id", async (req, res) => {
 
 
 
-
-app.put("/update-volunteer-post/:id", async (req, res) => {
+//private route
+app.put("/update-volunteer-post/:id",verifyToken, async (req, res) => {
   const { id } = req.params;
   const updateData = req.body;
 
@@ -318,8 +336,8 @@ app.put("/update-volunteer-post/:id", async (req, res) => {
 
 
 
-
-app.delete("/delete-volunteer-post/:id", async (req, res) => {
+//private
+app.delete("/delete-volunteer-post/:id",verifyToken, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -339,7 +357,7 @@ app.delete("/delete-volunteer-post/:id", async (req, res) => {
 // ___________my volunteer post end
 
 
-
+//private
 // my volunteer request page
 
 app.get("/volunteer-requests/:email", verifyToken, async (req, res) => {
@@ -368,7 +386,7 @@ try {
 
 // my volunteer request page
 
-app.post("/cancel-volunteer-request", async (req, res) => {
+app.post("/cancel-volunteer-request", verifyToken, async (req, res) => {
     const data = req.body;
     const postId = data?.postId;
     const id = data?._id;
@@ -402,7 +420,7 @@ app.post("/cancel-volunteer-request", async (req, res) => {
 });
 
 
-
+//public
 // home -> volunteer need now
 app.get("/volunteer-posts-sorted", async (req, res) => {
   try {
@@ -421,7 +439,7 @@ app.get("/volunteer-posts-sorted", async (req, res) => {
 
 
 
-
+//public route
 // share work experience
 app.post('/work-experience', async (req, res) => {
   const workExperienceData = req.body;
@@ -449,6 +467,7 @@ app.post('/work-experience', async (req, res) => {
 });
 
 
+//public route
 // get work experience
 app.get('/work-experience', async (req, res) => {
   try {
@@ -537,7 +556,7 @@ app.post("/update-request-status", verifyToken, async (req, res) => {
 
 
 
-
+// private route
     // app.patch("/decrease-volunteer-need/:id", async (req, res) => {
     //   const { id } = req.params;
 
