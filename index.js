@@ -219,12 +219,12 @@ async function run() {
         console.log("Insert result:", result);
     
         // Update the volunteersNeeded count
-        // const result2 = await postVolunteerCollection.findOneAndUpdate(
-        //   { _id: new ObjectId(id) },
-        //   { $inc: { volunteersNeeded: -1 } },
-        //   { returnDocument: "after" }
-        // );
-        // console.log("Update result:", result2); // Log the result of the update
+        const result2 = await postVolunteerCollection.findOneAndUpdate(
+          { _id: new ObjectId(id) },
+          { $inc: { volunteersNeeded: -1 } },
+          { returnDocument: "after" }
+        );
+        console.log("Update result:", result2); // Log the result of the update
     
         // if (!result2.value) {
         //   return res.status(404).json({ message: "Post not found" });
@@ -387,7 +387,7 @@ app.post("/cancel-volunteer-request", verifyToken, async (req, res) => {
 
   try {
 
-   if(status === "accepted") {
+   if(status === "accepted" || status === "requested") {
      const result2 = await postVolunteerCollection.findOneAndUpdate(
       { _id: new ObjectId(postId) },
       { $inc: { volunteersNeeded: 1 } },
@@ -516,11 +516,11 @@ app.post("/update-request-status", verifyToken, async (req, res) => {
 
   try {
 
-    if(status === "accepted") {
+    if(status === "rejected") {
       console.log(status);
       const result2 = await postVolunteerCollection.findOneAndUpdate(
         { _id: new ObjectId(postId) },
-        { $inc: { volunteersNeeded: -1 } },
+        { $inc: { volunteersNeeded: 1 } },
         { returnDocument: "after" }
       );
       // console.log("Update result:", result2);
