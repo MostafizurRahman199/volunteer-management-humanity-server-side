@@ -123,7 +123,14 @@ async function run() {
         .send({ success: true });
     });
 
+
+
+
+
+
     // ________________________________my posted job api
+
+
     app.post("/post-for-volunteer", verifyToken, async (req, res) => {
       try {
         const data = req.body;
@@ -197,10 +204,6 @@ async function run() {
  
 
 
-// app.delete("/apply-for-volunteer", async (req, res) => {
-//    const result = await appliedForVolunteerCollection.deleteMany({});
-//     res.status(200).json(result);
-// })
 
 
 //private
@@ -269,8 +272,8 @@ app.get("/volunteer-posts/:email",verifyToken, async (req, res) => {
 });
 
 
-
-app.get("/volunteer-post/:id", async (req, res) => {
+// private route
+app.get("/volunteer-post/:id",verifyToken, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -590,6 +593,7 @@ app.post("/save-post", verifyToken, async (req, res) => {
 });
 
 
+// private route
 app.get("/check-saved/:postId/:email", verifyToken, async (req, res) => {
   try {
     const { postId, email } = req.params;
@@ -616,6 +620,7 @@ app.get("/check-saved/:postId/:email", verifyToken, async (req, res) => {
 
 
 //saved page route
+//private route
 
 app.get("/saved-posts/:email", verifyToken, async (req, res) => {
   try {
